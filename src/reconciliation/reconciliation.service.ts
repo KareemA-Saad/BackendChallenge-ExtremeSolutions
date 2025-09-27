@@ -17,12 +17,9 @@ export class ReconciliationService {
     const systemTransactions =
       await this.csvReaderService.readSystemTransactions();
 
-    // Step 2: Perform reconciliation
-    const result = this.reconcilerService.reconcile(
+    return this.reconcilerService.reconcile(
       sourceTransactions,
       systemTransactions,
     );
-
-    return result;
   }
 }
