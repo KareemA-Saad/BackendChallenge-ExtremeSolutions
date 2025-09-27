@@ -17,11 +17,9 @@ export class CsvReaderService {
       const fileContent = await fs.readFile(filePath, 'utf-8');
       
       const records = parse(fileContent, {
-        columns: true, // Use first row as column headers
+        columns: true,
         skip_empty_lines: true,
       });
-
-      // Convert CSV records to SourceTransaction objects
       return records.map((record: any) => ({
         providerTransactionId: record.providerTransactionId,
         email: record.email,
@@ -51,11 +49,9 @@ export class CsvReaderService {
       const fileContent = await fs.readFile(filePath, 'utf-8');
       
       const records = parse(fileContent, {
-        columns: true, // Use first row as column headers
+        columns: true,
         skip_empty_lines: true,
       });
-
-      // Convert CSV records to SystemTransaction objects
       return records.map((record: any) => ({
         transactionId: record.transactionId,
         userId: record.userId,
