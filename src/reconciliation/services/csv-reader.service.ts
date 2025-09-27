@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { promises as fs } from 'fs';
+import { parse } from 'csv-parse/sync';
+import * as path from 'path';
 import {
   SourceTransaction,
   SystemTransaction,
@@ -6,15 +9,68 @@ import {
 
 @Injectable()
 export class CsvReaderService {
-  readSourceTransactions(): Promise<SourceTransaction[]> {
-    // TODO: Implement CSV reading for source transactions
-    // Will read from data/source_transactions.csv
-    throw new Error('Not implemented yet');
+  private readonly dataPath = path.join(process.cwd(), 'data');
+
+  async readSourceTransactions(): Promise<SourceTransaction[]> {
+    try {
+      const filePath = path.join(this.dataPath, 'source_transactions.csv');
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      
+      const records = parse(fileContent, {
+        columns: true, // Use first row as column headers
+        skip_empty_lines: true,
+      });
+
+      // Convert CSV records to SourceTransaction objects
+      return records.map((record: any) => ({
+        providerTransactionId: record.providerTransactionId,
+        email: record.email,
+        userId: record.userId,
+        provider: record.provider,
+        amount: parseFloat(record.amount),
+        currency: record.currency,
+        status: record.status,
+        transactionType: record.transactionType,
+        paymentMethod: record.paymentMethod,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        providerReference: record.providerReference,
+        fraudRisk: record.fraudRisk,
+        details_invoiceId: record.details_invoiceId,
+        details_customerName: record.details_customerName,
+        details_description: record.details_description,
+      }));
+    } catch (error) {
+      throw new Error(`Failed to read source transactions: ${error.message}`);
+    }
   }
 
-  readSystemTransactions(): Promise<SystemTransaction[]> {
-    // TODO: Implement CSV reading for system transactions
-    // Will read from data/system_transactions.csv
-    throw new Error('Not implemented yet');
+  async readSystemTransactions(): Promise<SystemTransaction[]> {
+    try {
+      const filePath = path.join(this.dataPath, 'system_transactions.csv');
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      
+      const records = parse(fileContent, {
+        columns: true, // Use first row as column headers
+        skip_empty_lines: true,
+      });
+
+      // Convert CSV records to SystemTransaction objects
+      return records.map((record: any) => ({
+        transactionId: record.transactionId,
+        userId: record.userId,
+        amount: parseFloat(record.amount),
+        currency: record.currency,
+        status: record.status,
+        paymentMethod: record.paymentMethod,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        referenceId: record.referenceId,
+        metadata_orderId: record.metadata_orderId,
+        metadata_description: record.metadata_description,
+      }));
+    } catch (error) {
+      throw new Error(`Failed to read system transactions: ${error.message}`);
+    }
   }
 }
