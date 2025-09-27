@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CsvReaderService } from './services/csv-reader.service';
 import { ReconcilerService } from './services/reconciler.service';
 import { ReconciliationResult } from './models/reconciliation-result.model';
+import { ReconciliationProcessError } from './exceptions/reconciliation.exceptions';
 
 @Injectable()
 export class ReconciliationService {
@@ -11,15 +12,29 @@ export class ReconciliationService {
   ) {}
 
   async reconcileTransactions(): Promise<ReconciliationResult> {
-    // Step 1: Read both CSV files
-    const sourceTransactions =
-      await this.csvReaderService.readSourceTransactions();
-    const systemTransactions =
-      await this.csvReaderService.readSystemTransactions();
+    try {
+      const sourceTransactions =
+        await this.csvReaderService.readSourceTransactions();
+      const systemTransactions =
+        await this.csvReaderService.readSystemTransactions();
 
-    return this.reconcilerService.reconcile(
-      sourceTransactions,
-      systemTransactions,
-    );
+      if (!sourceTransactions.length && !systemTransactions.length) {
+        throw new ReconciliationProcessError('Both transaction files are empty');
+      }
+
+      return this.reconcilerService.reconcile(
+        sourceTransactions,
+        systemTransactions,
+      );
+    } catch (error) {
+      // Re-throw our custom exceptions
+      if (error.name === 'FileNotFoundError' || 
+          error.name === 'CsvParsingError' || 
+          error.name === 'ReconciliationProcessError') {
+        throw error;
+      }
+      // Wrap unknown errors
+      throw new ReconciliationProcessError(`Unexpected error: ${error.message}`);
+    }
   }
 }

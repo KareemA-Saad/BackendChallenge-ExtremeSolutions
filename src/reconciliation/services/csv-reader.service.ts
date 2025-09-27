@@ -6,20 +6,23 @@ import {
   SourceTransaction,
   SystemTransaction,
 } from '../../types/transaction.types';
+import { FileNotFoundError, CsvParsingError } from '../exceptions/reconciliation.exceptions';
 
 @Injectable()
 export class CsvReaderService {
   private readonly dataPath = path.join(process.cwd(), 'data');
 
   async readSourceTransactions(): Promise<SourceTransaction[]> {
+    const fileName = 'source_transactions.csv';
     try {
-      const filePath = path.join(this.dataPath, 'source_transactions.csv');
+      const filePath = path.join(this.dataPath, fileName);
       const fileContent = await fs.readFile(filePath, 'utf-8');
       
       const records = parse(fileContent, {
         columns: true,
         skip_empty_lines: true,
       });
+
       return records.map((record: any) => ({
         providerTransactionId: record.providerTransactionId,
         email: record.email,
@@ -39,19 +42,24 @@ export class CsvReaderService {
         details_description: record.details_description,
       }));
     } catch (error) {
-      throw new Error(`Failed to read source transactions: ${error.message}`);
+      if (error.code === 'ENOENT') {
+        throw new FileNotFoundError(fileName);
+      }
+      throw new CsvParsingError(fileName, error.message);
     }
   }
 
   async readSystemTransactions(): Promise<SystemTransaction[]> {
+    const fileName = 'system_transactions.csv';
     try {
-      const filePath = path.join(this.dataPath, 'system_transactions.csv');
+      const filePath = path.join(this.dataPath, fileName);
       const fileContent = await fs.readFile(filePath, 'utf-8');
       
       const records = parse(fileContent, {
         columns: true,
         skip_empty_lines: true,
       });
+
       return records.map((record: any) => ({
         transactionId: record.transactionId,
         userId: record.userId,
@@ -66,7 +74,10 @@ export class CsvReaderService {
         metadata_description: record.metadata_description,
       }));
     } catch (error) {
-      throw new Error(`Failed to read system transactions: ${error.message}`);
+      if (error.code === 'ENOENT') {
+        throw new FileNotFoundError(fileName);
+      }
+      throw new CsvParsingError(fileName, error.message);
     }
   }
 }
